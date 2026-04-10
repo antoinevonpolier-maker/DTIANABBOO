@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VACOA — Générateur DT</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#eeedf5;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh}
+.app{max-width:980px;margin:0 auto;padding:24px 16px}
+
+/* Header */
+.app-header{display:flex;align-items:center;gap:16px;margin-bottom:28px}
+.app-logo{font-size:26px;font-weight:900;color:#1a1a3e;letter-spacing:3px}
+.app-logo span{font-size:13px;font-weight:400;color:#888;letter-spacing:0;display:block;margin-top:2px}
+
+/* Card */
+.card{background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 16px rgba(0,0,0,.07);margin-bottom:20px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid #e8e4f8;margin-bottom:22px}
+.tab{padding:10px 22px;font-size:14px;font-weight:600;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab.active{color:#5B47D6;border-bottom-color:#5B47D6}
+
+/* Upload zone */
+.upload-zone{border:2px dashed #c5bcf0;border-radius:10px;padding:44px;text-align:center;cursor:pointer;transition:all .2s;background:#faf9ff}
+.upload-zone:hover,.upload-zone.drag-over{border-color:#5B47D6;background:#f0eeff}
+.upload-icon{font-size:44px;margin-bottom:10px}
+.upload-title{font-size:17px;font-weight:700;color:#1a1a3e;margin-bottom:5px}
+.upload-sub{font-size:13px;color:#999}
+.file-info{display:none;margin-top:12px;padding:10px 16px;background:#f0eeff;border-radius:8px;font-size:13px;color:#5B47D6;font-weight:600}
+
+/* Paste zone */
+.paste-zone{display:none}
+.paste-zone textarea{width:100%;height:220px;padding:14px;border:2px solid #e0ddf5;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;color:#333;outline:none;transition:border .2s}
+.paste-zone textarea:focus{border-color:#5B47D6}
+.paste-count{font-size:12px;color:#aaa;text-align:right;margin-top:6px}
+
+/* Additional info */
+.add-info-label{font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:8px;margin-top:20px}
+.add-info-input{width:100%;height:72px;padding:10px 14px;border:1.5px solid #e0ddf5;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;transition:border .2s;color:#333}
+.add-info-input:focus{border-color:#5B47D6}
+
+/* Consultant config */
+.config-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.config-input{padding:9px 12px;border:1.5px solid #e0ddf5;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:100%;transition:border .2s;color:#333}
+.config-input:focus{border-color:#5B47D6}
+.config-label{font-size:11px;font-weight:600;color:#888;margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.5px}
+
+/* Buttons */
+.btn-primary{background:#5B47D6;color:#fff;border:none;border-radius:9px;padding:14px 32px;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s;width:100%;margin-top:18px;letter-spacing:.3px}
+.btn-primary:hover{background:#4a38c4}
+.btn-primary:disabled{background:#bbb;cursor:not-allowed}
+.btn-secondary{background:#fff;color:#5B47D6;border:2px solid #5B47D6;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{background:#f0eeff}
+
+/* Progress */
+.progress-title{font-size:16px;font-weight:700;color:#1a1a3e;margin-bottom:20px}
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:9px;background:#f8f8fc;transition:all .3s;border-left:4px solid transparent}
+.step.active{background:#f0eeff;border-left-color:#5B47D6}
+.step.done{background:#f0fff6;border-left-color:#22c55e}
+.step-icon{font-size:20px;width:28px;text-align:center}
+.step-text{font-size:14px;font-weight:500;color:#444}
+
+/* DT Actions */
+.dt-actions{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+
+/* ===== DOSSIER TECHNIQUE ===== */
+.dt-wrapper{background:#f0f0f5;padding:20px;border-radius:8px}
+.dt-page{background:#fff;width:100%;padding:28px 32px 80px;border-top:5px solid #1a1a3e;border-left:5px solid #1a1a3e;border-bottom:1px solid #ddd;border-right:1px solid #ddd;margin-bottom:16px;position:relative;border-radius:2px}
+
+/* Page header */
+.dt-ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;padding-bottom:6px}
+.dt-ph .lbl{font-style:italic;font-size:11px;color:#555;font-weight:600;letter-spacing:.5px}
+.dt-ph .vlogo{font-size:18px;font-weight:900;color:#1a1a3e;letter-spacing:4px}
+
+/* Page footer */
+.dt-pf{position:absolute;bottom:16px;left:32px;right:32px;display:flex;justify-content:space-between;font-size:10.5px;color:#666;border-top:1px solid #e8e8e8;padding-top:8px}
+
+/* Cover */
+.dt-name{font-size:26px;font-weight:900;color:#1a1a3e;margin-bottom:3px}
+.dt-title{font-size:20px;font-weight:700;color:#5B47D6;margin-bottom:18px}
+.dt-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+.dt-tag{background:#5B47D6;color:#fff;padding:5px 14px;border-radius:20px;font-size:11.5px;font-weight:600}
+.dt-resume{font-size:12.5px;line-height:1.75;color:#333;margin-bottom:28px}
+.dt-resume b{font-weight:700;color:#111}
+.dt-sectors-lbl{background:#5B47D6;color:#fff;padding:6px 20px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;margin-bottom:18px}
+.dt-sectors-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:480px;margin:0 auto 20px}
+.dt-sector{text-align:center}
+.dt-sector-circle{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#2e2577,#7b5ce7);display:flex;align-items:center;justify-content:center;margin:0 auto 7px;font-size:30px}
+.dt-sector-badge{font-size:11px;font-weight:700;color:#fff;background:#5B47D6;padding:4px 12px;border-radius:12px;display:inline-block}
+.dt-footer-boxes{display:grid;grid-template-columns:1fr 1fr;gap:14px;position:absolute;bottom:16px;left:32px;right:32px}
+.dt-fb{border:1px solid #ccc;padding:11px 15px;border-radius:4px;font-size:11.5px;color:#333;line-height:1.65}
+.dt-fb strong{font-weight:700;color:#1a1a3e;display:block;margin-bottom:3px}
+
+/* Skills page */
+.dt-sec-badge{background:#5B47D6;color:#fff;padding:5px 16px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;margin-bottom:18px}
+.dt-sub{margin-bottom:18px}
+.dt-sub-title{font-size:12px;font-weight:700;color:#5B47D6;text-transform:uppercase;letter-spacing:1px;padding-bottom:5px;border-bottom:1.5px solid #5B47D6;margin-bottom:11px}
+.dt-skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.dt-skill{font-size:12.5px;color:#333;display:flex;align-items:flex-start;gap:6px;line-height:1.4}
+.dt-skill::before{content:"•";color:#5B47D6;font-size:15px;flex-shrink:0;margin-top:-1px}
+.dt-lang{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.dt-dots{display:flex;gap:3px}
+.dt-dot{width:11px;height:11px;border-radius:50%;background:#5B47D6}
+.dt-dot.e{background:#ddd}
+.dt-lname{font-weight:700;font-size:12.5px;color:#1a1a3e}
+.dt-ldesc{font-size:11.5px;color:#777;display:block;margin-left:28px;margin-bottom:8px}
+.dt-form{display:flex;gap:14px;margin-bottom:9px;align-items:flex-start}
+.dt-form-yr{background:#5B47D6;color:#fff;padding:4px 9px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap;min-width:44px;text-align:center}
+.dt-form-txt{font-size:12.5px;color:#333;padding-top:2px;line-height:1.5}
+.dt-form-txt b{color:#1a1a3e}
+
+/* Exp page */
+.dt-exp-co{display:inline-block;padding:5px 16px;border-radius:4px;color:#fff;font-size:12px;font-weight:800;margin-bottom:11px;text-transform:uppercase;letter-spacing:.8px}
+.dt-exp-poste{font-size:15px;font-weight:700;color:#1a1a3e;margin-bottom:3px}
+.dt-exp-dates{font-size:12.5px;color:#444;margin-bottom:1px}
+.dt-exp-dur{font-size:12.5px;color:#5B47D6;font-style:italic;margin-bottom:14px}
+.dt-exp-hr{border:none;border-top:1px solid #d0d0d0;margin-bottom:14px}
+.dt-exp-stitle{font-size:12px;font-weight:700;color:#5B47D6;margin-bottom:7px}
+.dt-exp-ctx{font-size:12.5px;color:#333;line-height:1.6;margin-bottom:15px}
+.dt-missions{list-style:none;padding:0}
+.dt-missions li{font-size:12.5px;color:#333;padding:3px 0 3px 16px;position:relative;line-height:1.5}
+.dt-missions li::before{content:"•";color:#5B47D6;position:absolute;left:4px;font-size:13px}
+.dt-missions li.sub{padding-left:30px}
+.dt-missions li.sub::before{left:18px}
+
+/* Print */
+@media print{
+  body{background:#fff}
+  .app-header,.dt-actions,.card:not(.dt-card){display:none!important}
+  #uploadSection,#progressSection{display:none!important}
+  .dt-wrapper{background:#fff;padding:0}
+  .dt-page{page-break-after:always;border:none;border-top:4px solid #1a1a3e;border-left:4px solid #1a1a3e;margin:0}
+  .dt-page:last-child{page-break-after:avoid}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <div class="app-logo">VACOA <span>Générateur de Dossier Technique — IA + Recherche Web</span></div>
+  </div>
+
+  <!-- Upload Section -->
+  <div id="uploadSection" class="card">
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('upload')">📎 Upload fichier</div>
+      <div class="tab" onclick="switchTab('paste')">📝 Coller le texte</div>
+    </div>
+
+    <!-- File Upload -->
+    <div id="tabUpload">
+      <div class="upload-zone" id="dropZone">
+        <div class="upload-icon">📄</div>
+        <div class="upload-title">Déposez le CV ici</div>
+        <div class="upload-sub">PDF ou texte — ou cliquez pour parcourir</div>
+        <input type="file" id="fileInput" accept=".pdf,.txt" style="display:none">
+      </div>
+      <div class="file-info" id="fileInfo"></div>
+    </div>
+
+    <!-- Paste Text -->
+    <div id="tabPaste" class="paste-zone">
+      <textarea id="pasteArea" placeholder="Collez ici le contenu du CV (texte brut)..." oninput="onPasteInput()"></textarea>
+      <div class="paste-count" id="pasteCount">0 caractères</div>
+    </div>
+
+    <!-- Infos complémentaires -->
+    <label class="add-info-label">Informations complémentaires <span style="font-weight:400;color:#aaa">(optionnel)</span></label>
+    <textarea class="add-info-input" id="addInfo" placeholder="Ex : poste visé, secteur cible, points forts à valoriser, TJM..."></textarea>
+
+    <!-- Consultant config -->
+    <div style="margin-top:20px;">
+      <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;">Contact VACOA (pied de page)</label>
+      <div class="config-row">
+        <div>
+          <label class="config-label">Nom du consultant</label>
+          <input class="config-input" id="cfgName" value="Paul MONTABONNEL" placeholder="Prénom NOM">
+        </div>
+        <div>
+          <label class="config-label">Email</label>
+          <input class="config-input" id="cfgEmail" value="p.montabonnel@vacoa-conseil.com" placeholder="email@vacoa-conseil.com">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="generateBtn" onclick="startGeneration()" disabled>
+      ✨ Générer le Dossier Technique
+    </button>
+  </div>
+
+  <!-- Progress Section -->
+  <div id="progressSection" style="display:none" class="card">
+    <div class="progress-title">⚡ Génération en cours…</div>
+    <div class="steps">
+      <div class="step" id="s1"><span class="step-icon">📄</span><span class="step-text">Lecture et extraction du CV</span></div>
+      <div class="step" id="s2"><span class="step-icon">🔍</span><span class="step-text">Recherches en ligne sur le profil et les entreprises</span></div>
+      <div class="step" id="s3"><span class="step-icon">✍️</span><span class="step-text">Rédaction du Dossier Technique enrichi</span></div>
+      <div class="step" id="s4"><span class="step-icon">🎨</span><span class="step-text">Mise en page au format VACOA</span></div>
+    </div>
+  </div>
+
+  <!-- DT Result -->
+  <div id="dtSection" style="display:none">
+    <div class="dt-actions">
+      <button class="btn-secondary" onclick="window.print()">🖨️ Imprimer / Exporter PDF</button>
+      <button class="btn-secondary" onclick="resetApp()">↩️ Nouveau DT</button>
+    </div>
+    <div id="dtContent"></div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+// ===== INIT =====
+if(typeof pdfjsLib!=='undefined')
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+let cvText='', activeTab='upload';
+
+const COLORS=['#1e2d78','#2c3e8a','#0f3460','#1a3a5c','#2d1b6e','#0d3b4f','#3b1f5e','#1f4e3b','#4a2c0a','#1a4a3a','#3a2c6e','#2a4060','#1f3a4a','#3e2040','#0a2a4a'];
+const SECTORS=[{n:'Aéronautique',e:'✈️'},{n:'Défense',e:'📡'},{n:'Nucléaire',e:'⚛️'},{n:'Énergie',e:'🌬️'},{n:'Automobile',e:'🚗'},{n:'Spatial',e:'🚀'}];
+
+// ===== TABS =====
+function switchTab(t){
+  activeTab=t;
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===(t==='upload'?0:1)));
+  document.getElementById('tabUpload').style.display=t==='upload'?'block':'none';
+  document.getElementById('tabPaste').style.display=t==='paste'?'block':'none';
+  if(t==='paste') document.getElementById('tabPaste').style.display='block';
+  checkReady();
+}
+
+// ===== FILE UPLOAD =====
+const dz=document.getElementById('dropZone');
+const fi=document.getElementById('fileInput');
+dz.addEventListener('click',()=>fi.click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0])});
+
+async function handleFile(file){
+  const info=document.getElementById('fileInfo');
+  info.style.display='block';
+  info.style.color='#5B47D6';
+  info.textContent=`⏳ Lecture de ${file.name}…`;
+  try{
+    if(file.type==='application/pdf'||file.name.endsWith('.pdf'))
+      cvText=await extractPdf(file);
+    else
+      cvText=await file.text();
+    info.textContent=`✅ ${file.name} — ${cvText.length.toLocaleString()} caractères extraits`;
+    checkReady();
+  }catch(err){
+    info.textContent=`❌ Erreur : ${err.message}`;
+    info.style.color='#e00';
+    cvText='';
+    checkReady();
+  }
+}
+
+async function extractPdf(file){
+  if(typeof pdfjsLib==='undefined') throw new Error('PDF.js indisponible — utilisez l\'onglet "Coller le texte"');
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let txt='';
+  for(let i=1;i<=pdf.numPages;i++){
+    const p=await pdf.getPage(i);
+    const c=await p.getTextContent();
+    txt+=c.items.map(x=>x.str).join(' ')+'\n\n';
+  }
+  return txt.trim();
+}
+
+// ===== PASTE =====
+function onPasteInput(){
+  const v=document.getElementById('pasteArea').value;
+  document.getElementById('pasteCount').textContent=`${v.length.toLocaleString()} caractères`;
+  cvText=v;
+  checkReady();
+}
+
+function checkReady(){
+  const txt=activeTab==='upload'?cvText:document.getElementById('pasteArea').value;
+  document.getElementById('generateBtn').disabled=!txt||txt.length<50;
+}
+
+// ===== GENERATION =====
+async function startGeneration(){
+  const txt=activeTab==='paste'?document.getElementById('pasteArea').value:cvText;
+  if(!txt||txt.length<50) return;
+  cvText=txt;
+
+  document.getElementById('uploadSection').style.display='none';
+  document.getElementById('progressSection').style.display='block';
+
+  setStep(1,'active');
+  await sleep(700);
+  setStep(1,'done');
+  setStep(2,'active');
+
+  try{
+    const data=await callAPI(cvText, document.getElementById('addInfo').value);
+    setStep(2,'done');
+    setStep(3,'active');
+    await sleep(500);
+    setStep(3,'done');
+    setStep(4,'active');
+    await sleep(300);
+    renderDT(data);
+    setStep(4,'done');
+    document.getElementById('progressSection').style.display='none';
+    document.getElementById('dtSection').style.display='block';
+    document.getElementById('dtSection').scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    document.getElementById('progressSection').innerHTML=`<div style="color:#c00;padding:10px"><strong>Erreur :</strong> ${e.message}<br><br><button class="btn-secondary" onclick="resetApp()">↩️ Réessayer</button></div>`;
+  }
+}
+
+function setStep(n,s){
+  const el=document.getElementById(`s${n}`);
+  el.className=`step ${s}`;
+  if(s==='done') el.querySelector('.step-icon').textContent='✅';
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+// ===== API =====
+async function callAPI(cv,addInfo){
+  const consultant=document.getElementById('cfgName').value||'Paul MONTABONNEL';
+  const email=document.getElementById('cfgEmail').value||'p.montabonnel@vacoa-conseil.com';
+
+  const prompt=`Tu es un expert en rédaction de Dossiers Techniques pour VACOA, société de conseil en ingénierie (secteurs : Aéronautique, Défense, Nucléaire, Énergie, Automobile, Spatial).
+
+MISSION : À partir du CV ci-dessous, génère un Dossier Technique complet en JSON.
+
+ÉTAPES :
+1. Extrait toutes les infos du CV
+2. Utilise la recherche web pour enrichir le CONTEXTE de chaque mission (description réelle des projets/entreprises)
+3. Génère le JSON final
+
+RÉPONDS UNIQUEMENT AVEC DU JSON VALIDE — sans markdown, sans backticks, sans commentaires.
+
+SCHÉMA JSON :
+{
+  "initiales": "XX",
+  "titre": "Titre principal",
+  "tags": ["X ans d'expérience","Tag2","Tag3","Tag4","Tag5"],
+  "resume": "Paragraphe commercial 3-5 phrases, style valorisant, utiliser 'ce profil' ou 'cet expert'. Mettre les mots-clés importants entre **doubles astérisques** pour le gras.",
+  "competences": {
+    "certifications": ["Certif 1","Certif 2"],
+    "gestion_projet": ["Compétence A","Compétence B","Compétence C","Compétence D"],
+    "gestion_contractuelle": ["Compétence A","Compétence B","Compétence C"]
+  },
+  "langues": [
+    {"langue":"Français","drapeau":"🇫🇷","niveau":5,"description":"Langue maternelle"},
+    {"langue":"Anglais","drapeau":"🇬🇧","niveau":4,"description":"Anglais professionnel"}
+  ],
+  "formations": [
+    {"annee":"2000","diplome":"Nom du diplôme","ecole":"Nom école"}
+  ],
+  "experiences": [
+    {
+      "entreprise":"Nom Entreprise",
+      "poste":"Titre du poste",
+      "debut":"Mois Année",
+      "fin":"Présent",
+      "duree":"X ans et Y mois",
+      "contexte":"2-3 phrases décrivant le contexte réel du projet/entreprise (enrichi via recherche web)",
+      "missions":["Mission détaillée 1","Mission détaillée 2","Mission détaillée 3","Mission détaillée 4"],
+      "references":["Référence réglementaire ou technique si applicable"]
+    }
+  ],
+  "consultant_name":"${consultant}",
+  "consultant_email":"${email}"
+}
+
+RÈGLES :
+- initiales = première lettre prénom + première lettre NOM (Jean DUPONT → "JD")
+- Le résumé doit être commercial et valorisant
+- Expériences triées de la plus récente à la plus ancienne
+- Missions : au moins 3-5 bullets par expérience, enrichies avec le contexte réel
+- Si peu d'info dans le CV pour une mission, enrichis avec les activités typiques du poste + contexte de l'entreprise trouvé en ligne
+- Laisser references:[] si pas de référence applicable
+${addInfo?`\nInfos complémentaires : ${addInfo}`:''}
+
+CV :
+${cv.substring(0,12000)}`;
+
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:4000,
+      tools:[{type:'web_search_20250305',name:'web_search'}],
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+
+  if(!resp.ok){
+    const err=await resp.json().catch(()=>({}));
+    throw new Error(err.error?.message||`Erreur API ${resp.status}`);
+  }
+
+  const d=await resp.json();
+  const txt=d.content.map(b=>b.type==='text'?b.text:'').filter(Boolean).join('\n');
+
+  try{
+    const clean=txt.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    const match=clean.match(/\{[\s\S]*\}/);
+    if(!match) throw new Error('Aucun JSON trouvé');
+    return JSON.parse(match[0]);
+  }catch(e){
+    throw new Error('Parsing JSON échoué : '+txt.substring(0,300));
+  }
+}
+
+// ===== RENDER DT =====
+function renderDT(d){
+  const wrap=document.getElementById('dtContent');
+  wrap.innerHTML='';
+  const wdiv=document.createElement('div');
+  wdiv.className='dt-wrapper';
+  wdiv.appendChild(makeCover(d));
+  wdiv.appendChild(makeSkills(d));
+  (d.experiences||[]).forEach((e,i)=>wdiv.appendChild(makeExp(e,i,d)));
+  wrap.appendChild(wdiv);
+}
+
+function ph(){
+  return `<div class="dt-ph"><span class="lbl">DOSSIER TECHNIQUE</span><span class="vlogo">VACOA</span></div>`;
+}
+function pf(d){
+  const n=d.consultant_name||'Paul MONTABONNEL';
+  const e=d.consultant_email||'p.montabonnel@vacoa-conseil.com';
+  return `<div class="dt-pf"><span>${n} • ${e}</span><span>DOSSIER TECHNIQUE</span></div>`;
+}
+
+function makeCover(d){
+  const el=document.createElement('div');
+  el.className='dt-page';
+  const resumeHtml=(d.resume||'').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
+  const tags=(d.tags||[]).map(t=>`<span class="dt-tag">${t}</span>`).join('');
+  const sectors=SECTORS.map(s=>`
+    <div class="dt-sector">
+      <div class="dt-sector-circle">${s.e}</div>
+      <div class="dt-sector-badge">${s.n}</div>
+    </div>`).join('');
+  el.innerHTML=`${ph()}
+    <div class="dt-name">${d.initiales||'XX'}</div>
+    <div class="dt-title">${d.titre||'Consultant'}</div>
+    <div class="dt-tags">${tags}</div>
+    <p class="dt-resume">${resumeHtml}</p>
+    <div style="text-align:center"><span class="dt-sectors-lbl">Nos secteurs</span></div>
+    <div class="dt-sectors-grid">${sectors}</div>
+    <div class="dt-footer-boxes">
+      <div class="dt-fb"><strong>Contact</strong>${d.consultant_name||'Paul MONTABONNEL'}<br>${d.consultant_email||'p.montabonnel@vacoa-conseil.com'}<br>0787857032</div>
+      <div class="dt-fb"><strong>VACOA</strong>Campus Aviso<br>49 quai de Dion Bouton<br>92800 PUTEAUX</div>
+    </div>`;
+  return el;
+}
+
+function makeSkills(d){
+  const el=document.createElement('div');
+  el.className='dt-page';
+  const c=d.competences||{};
+  const sklGrid=arr=>(arr||[]).map(s=>`<div class="dt-skill">${s}</div>`).join('');
+  const langs=(d.langues||[]).map(l=>{
+    const dots=Array(5).fill(0).map((_,i)=>`<div class="dt-dot${i<l.niveau?'':' e'}"></div>`).join('');
+    return `<div class="dt-lang"><span style="font-size:18px">${l.drapeau||''}</span><span class="dt-lname">${l.langue}</span><div class="dt-dots">${dots}</div></div><span class="dt-ldesc">${l.description||''}</span>`;
+  }).join('');
+  const forms=(d.formations||[]).map(f=>`<div class="dt-form"><span class="dt-form-yr">${f.annee}</span><div class="dt-form-txt"><b>${f.diplome}</b> • ${f.ecole}</div></div>`).join('');
+  el.innerHTML=`${ph()}
+    <span class="dt-sec-badge">Domaines de compétences</span>
+    <div class="dt-sub"><div class="dt-sub-title">Certifications</div>${sklGrid(c.certifications)||'<div class="dt-skill">—</div>'}</div>
+    <div class="dt-sub"><div class="dt-sub-title">Gestion de projet</div><div class="dt-skills-grid">${sklGrid(c.gestion_projet)}</div></div>
+    <div class="dt-sub"><div class="dt-sub-title">Gestion contractuelle</div><div class="dt-skills-grid">${sklGrid(c.gestion_contractuelle)}</div></div>
+    <div style="margin-top:22px"><span class="dt-sec-badge">Langues</span><div style="margin-top:12px">${langs}</div></div>
+    <div style="margin-top:22px"><span class="dt-sec-badge">Formations</span><div style="margin-top:12px">${forms}</div></div>
+    ${pf(d)}`;
+  return el;
+}
+
+function makeExp(exp,idx,d){
+  const el=document.createElement('div');
+  el.className='dt-page';
+  const color=COLORS[idx%COLORS.length];
+  const missions=(exp.missions||[]).map(m=>`<li>${m}</li>`).join('');
+  const refs=(exp.references||[]).length>0
+    ?`<div style="margin-top:14px"><div class="dt-exp-stitle">Prise de référence</div><ul class="dt-missions">${(exp.references||[]).map(r=>`<li>${r}</li>`).join('')}</ul></div>`
+    :'';
+  const ctx=exp.contexte
+    ?`<div style="margin-bottom:14px"><div class="dt-exp-stitle">Contexte et objectifs</div><p class="dt-exp-ctx">${exp.contexte}</p></div>`
+    :'';
+  const fin=exp.fin&&exp.fin!=='Présent'?`à ${exp.fin}`:(exp.fin==='Présent'?'':'');
+  el.innerHTML=`${ph()}
+    <span class="dt-exp-co" style="background:${color}">${exp.entreprise||''}</span>
+    <div class="dt-exp-poste">${exp.poste||''}</div>
+    <div class="dt-exp-dates">Depuis ${exp.debut||''} ${fin}</div>
+    <div class="dt-exp-dur">(${exp.duree||''})</div>
+    <hr class="dt-exp-hr">
+    ${ctx}
+    <div><div class="dt-exp-stitle">Missions</div><ul class="dt-missions">${missions}</ul></div>
+    ${refs}
+    ${pf(d)}`;
+  return el;
+}
+
+// ===== RESET =====
+function resetApp(){
+  cvText='';
+  ['uploadSection'].forEach(id=>document.getElementById(id).style.display='block');
+  ['progressSection','dtSection'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('fileInfo').style.display='none';
+  document.getElementById('addInfo').value='';
+  document.getElementById('pasteArea').value='';
+  document.getElementById('pasteCount').textContent='0 caractères';
+  document.getElementById('generateBtn').disabled=true;
+  document.getElementById('fileInput').value='';
+  document.getElementById('dtContent').innerHTML='';
+  for(let i=1;i<=4;i++){
+    const s=document.getElementById(`s${i}`);
+    if(s){s.className='step';const icons=['','📄','🔍','✍️','🎨'];s.querySelector('.step-icon').textContent=icons[i];}
+  }
+  switchTab('upload');
+}
+</script>
+</body>
+</html>
