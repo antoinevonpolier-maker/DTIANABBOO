@@ -16,6 +16,8 @@ body{background:#eeedf5;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh
 
 /* Card */
 .card{background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 16px rgba(0,0,0,.07);margin-bottom:20px}
+.notice{background:#eef8ff;border:1px solid #b6dcff;color:#12406a;padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.5;margin-bottom:14px}
+.help-list{font-size:12.5px;color:#555;line-height:1.6;padding-left:18px;margin:8px 0 0}
 
 /* Tabs */
 .tabs{display:flex;gap:0;border-bottom:2px solid #e8e4f8;margin-bottom:22px}
@@ -146,6 +148,17 @@ body{background:#eeedf5;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh
 
   <!-- Upload Section -->
   <div id="uploadSection" class="card">
+    <div class="notice">
+      🔒 <strong>Confidentialité :</strong> le CV est traité localement dans votre navigateur (aucune clé API requise).
+    </div>
+    <div class="notice" style="background:#fff8ee;border-color:#ffd8aa;color:#6b3f12">
+      ℹ️ <strong>Mode d'emploi rapide :</strong>
+      <ol class="help-list">
+        <li>Déposez un CV PDF/TXT (ou collez le texte).</li>
+        <li>Ajoutez les informations complémentaires si besoin.</li>
+        <li>Cliquez sur “Générer le Dossier Technique”.</li>
+      </ol>
+    </div>
 
     <div class="tabs">
       <div class="tab active" onclick="switchTab('upload')">📎 Upload fichier</div>
@@ -188,7 +201,7 @@ body{background:#eeedf5;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh
       </div>
     </div>
 
-    <button class="btn-primary" id="generateBtn" onclick="startGeneration()" disabled>
+        <button class="btn-primary" id="generateBtn" onclick="startGeneration()" disabled>
       ✨ Générer le Dossier Technique
     </button>
   </div>
@@ -208,6 +221,7 @@ body{background:#eeedf5;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh
   <div id="dtSection" style="display:none">
     <div class="dt-actions">
       <button class="btn-secondary" onclick="window.print()">🖨️ Imprimer / Exporter PDF</button>
+      <button class="btn-secondary" onclick="downloadDossierHtml()">💾 Télécharger (.html)</button>
       <button class="btn-secondary" onclick="resetApp()">↩️ Nouveau DT</button>
     </div>
     <div id="dtContent"></div>
@@ -335,90 +349,148 @@ async function callAPI(cv,addInfo){
   const consultant=document.getElementById('cfgName').value||'Paul MONTABONNEL';
   const email=document.getElementById('cfgEmail').value||'p.montabonnel@vacoa-conseil.com';
 
-  const prompt=`Tu es un expert en rédaction de Dossiers Techniques pour VACOA, société de conseil en ingénierie (secteurs : Aéronautique, Défense, Nucléaire, Énergie, Automobile, Spatial).
-
-MISSION : À partir du CV ci-dessous, génère un Dossier Technique complet en JSON.
-
-ÉTAPES :
-1. Extrait toutes les infos du CV
-2. Utilise la recherche web pour enrichir le CONTEXTE de chaque mission (description réelle des projets/entreprises)
-3. Génère le JSON final
-
-RÉPONDS UNIQUEMENT AVEC DU JSON VALIDE — sans markdown, sans backticks, sans commentaires.
-
-SCHÉMA JSON :
-{
-  "initiales": "XX",
-  "titre": "Titre principal",
-  "tags": ["X ans d'expérience","Tag2","Tag3","Tag4","Tag5"],
-  "resume": "Paragraphe commercial 3-5 phrases, style valorisant, utiliser 'ce profil' ou 'cet expert'. Mettre les mots-clés importants entre **doubles astérisques** pour le gras.",
-  "competences": {
-    "certifications": ["Certif 1","Certif 2"],
-    "gestion_projet": ["Compétence A","Compétence B","Compétence C","Compétence D"],
-    "gestion_contractuelle": ["Compétence A","Compétence B","Compétence C"]
-  },
-  "langues": [
-    {"langue":"Français","drapeau":"🇫🇷","niveau":5,"description":"Langue maternelle"},
-    {"langue":"Anglais","drapeau":"🇬🇧","niveau":4,"description":"Anglais professionnel"}
-  ],
-  "formations": [
-    {"annee":"2000","diplome":"Nom du diplôme","ecole":"Nom école"}
-  ],
-  "experiences": [
-    {
-      "entreprise":"Nom Entreprise",
-      "poste":"Titre du poste",
-      "debut":"Mois Année",
-      "fin":"Présent",
-      "duree":"X ans et Y mois",
-      "contexte":"2-3 phrases décrivant le contexte réel du projet/entreprise (enrichi via recherche web)",
-      "missions":["Mission détaillée 1","Mission détaillée 2","Mission détaillée 3","Mission détaillée 4"],
-      "references":["Référence réglementaire ou technique si applicable"]
-    }
-  ],
-  "consultant_name":"${consultant}",
-  "consultant_email":"${email}"
+  // Mode simple sans clé API : génération locale directe
+  // (pas de recherche web automatique dans ce mode)
+  return generateLocalDossier(cv,addInfo,consultant,email);
 }
 
-RÈGLES :
-- initiales = première lettre prénom + première lettre NOM (Jean DUPONT → "JD")
-- Le résumé doit être commercial et valorisant
-- Expériences triées de la plus récente à la plus ancienne
-- Missions : au moins 3-5 bullets par expérience, enrichies avec le contexte réel
-- Si peu d'info dans le CV pour une mission, enrichis avec les activités typiques du poste + contexte de l'entreprise trouvé en ligne
-- Laisser references:[] si pas de référence applicable
-${addInfo?`\nInfos complémentaires : ${addInfo}`:''}
+function generateLocalDossier(cv,addInfo,consultant,email){
+  const text=(cv||'').trim();
+  const lines=text.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  const firstLine=lines[0]||'Profil';
+  const guessedName=guessName(lines);
+  const initials=toInitials(guessedName||firstLine);
+  const title=guessTitle(text);
+  const skills=extractSkills(text);
+  const formations=extractFormations(lines);
+  const experiences=extractExperiences(lines,text);
+  const yearsTag=guessYearsTag(text);
 
-CV :
-${cv.substring(0,12000)}`;
+  const resumeParts=[];
+  resumeParts.push(`Ce profil possède une expérience confirmée en **${title.toLowerCase()}**.`);
+  if(skills.length) resumeParts.push(`Ses points forts couvrent notamment **${skills.slice(0,4).join(', ')}**.`);
+  if(addInfo&&addInfo.trim()) resumeParts.push(`Éléments complémentaires fournis : ${addInfo.trim()}.`);
+  resumeParts.push('Il/elle peut intervenir rapidement sur des environnements industriels exigeants.');
 
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:4000,
-      tools:[{type:'web_search_20250305',name:'web_search'}],
-      messages:[{role:'user',content:prompt}]
-    })
-  });
+  return {
+    initiales: initials,
+    titre: title,
+    tags: [yearsTag,'Pilotage projet','Qualité','Industrie','Adaptabilité'],
+    resume: resumeParts.join(' '),
+    competences: {
+      certifications: ['À confirmer avec le candidat'],
+      gestion_projet: skills.slice(0,6),
+      gestion_contractuelle: ['Suivi des livrables','Gestion des priorités','Communication client']
+    },
+    langues: [
+      {langue:'Français',drapeau:'🇫🇷',niveau:5,description:'Langue professionnelle'},
+      {langue:'Anglais',drapeau:'🇬🇧',niveau:3,description:'Niveau à confirmer'}
+    ],
+    formations,
+    experiences,
+    consultant_name: consultant,
+    consultant_email: email
+  };
+}
 
-  if(!resp.ok){
-    const err=await resp.json().catch(()=>({}));
-    throw new Error(err.error?.message||`Erreur API ${resp.status}`);
+function guessName(lines){
+  for(const l of lines.slice(0,8)){
+    if(l.length<60 && /[A-Za-zÀ-ÿ]{2,}\s+[A-Za-zÀ-ÿ-]{2,}/.test(l) && !/cv|curriculum|profil|expérience/i.test(l)) return l;
   }
+  return '';
+}
 
-  const d=await resp.json();
-  const txt=d.content.map(b=>b.type==='text'?b.text:'').filter(Boolean).join('\n');
+function toInitials(v){
+  const clean=(v||'').replace(/[^A-Za-zÀ-ÿ\s-]/g,' ').trim();
+  const parts=clean.split(/\s+/).filter(Boolean);
+  if(parts.length>=2) return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  if(parts.length===1) return (parts[0][0]+(parts[0][1]||'X')).toUpperCase();
+  return 'XX';
+}
 
-  try{
-    const clean=txt.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-    const match=clean.match(/\{[\s\S]*\}/);
-    if(!match) throw new Error('Aucun JSON trouvé');
-    return JSON.parse(match[0]);
-  }catch(e){
-    throw new Error('Parsing JSON échoué : '+txt.substring(0,300));
+function guessTitle(text){
+  const t=text.toLowerCase();
+  if(/data|bi|sql|power bi|tableau/.test(t)) return 'Consultant Data';
+  if(/chef de projet|project manager|pmo/.test(t)) return 'Chef de Projet';
+  if(/qualit|qse/.test(t)) return 'Ingénieur Qualité';
+  if(/maintenance|méthodes|industrialisation/.test(t)) return 'Ingénieur Méthodes';
+  if(/dev|développeur|javascript|python|java/.test(t)) return 'Ingénieur Développement';
+  return 'Consultant en Ingénierie';
+}
+
+function guessYearsTag(text){
+  const m=text.match(/(\d{1,2})\s*(ans|années)/i);
+  if(m) return `${m[1]} ans d'expérience`;
+  return "Expérience confirmée";
+}
+
+function extractSkills(text){
+  const bag=['Gestion de projet','Planification','Reporting','Coordination','Amélioration continue','Lean','Qualité','SQL','Python','JavaScript','Power BI','Excel','SAP','Conduite du changement','Analyse de données'];
+  const t=text.toLowerCase();
+  const found=bag.filter(s=>t.includes(s.toLowerCase()));
+  return (found.length?found:bag.slice(0,6)).slice(0,8);
+}
+
+function extractFormations(lines){
+  const out=[];
+  for(const l of lines){
+    if(/(20\d{2}|19\d{2}).*(master|ingénieur|licence|bts|dut|mba|école)/i.test(l)){
+      const y=(l.match(/20\d{2}|19\d{2}/)||[''])[0];
+      out.push({annee:y||'—',diplome:l.slice(0,60),ecole:'À préciser'});
+      if(out.length>=3) break;
+    }
   }
+  if(!out.length) out.push({annee:'—',diplome:'Formation supérieure',ecole:'À préciser'});
+  return out;
+}
+
+function extractExperiences(lines,text){
+  const exps=[];
+  for(const l of lines){
+    if(/(20\d{2}|19\d{2}).{0,20}(-|à|au|to).{0,20}(20\d{2}|19\d{2}|présent|present)/i.test(l) || /(chef|ingénieur|consultant|manager|développeur|technicien)/i.test(l)){
+      exps.push({
+        entreprise: guessCompany(l),
+        poste: guessPosition(l),
+        debut: 'À préciser',
+        fin: 'Présent',
+        duree: 'À préciser',
+        contexte: 'Intervention dans un environnement technique avec enjeux de qualité, délais et coordination multi-acteurs.',
+        missions: [
+          'Pilotage opérationnel des activités confiées',
+          'Suivi des jalons, risques et plans d’actions',
+          'Coordination avec les équipes métiers et techniques',
+          'Production du reporting et amélioration continue'
+        ],
+        references: []
+      });
+      if(exps.length>=4) break;
+    }
+  }
+  if(!exps.length){
+    exps.push({
+      entreprise:'Entreprise du candidat',
+      poste:guessTitle(text),
+      debut:'À préciser',
+      fin:'Présent',
+      duree:'À préciser',
+      contexte:'Expérience à structurer à partir du CV fourni.',
+      missions:['Analyse du besoin','Réalisation des activités techniques','Communication avec les parties prenantes'],
+      references:[]
+    });
+  }
+  return exps;
+}
+
+function guessCompany(line){
+  const m=line.match(/chez\s+([^,.;]+)/i);
+  if(m) return m[1].trim();
+  return 'Entreprise';
+}
+
+function guessPosition(line){
+  const m=line.match(/(chef de projet|ingénieur[^,.;]*|consultant[^,.;]*|manager[^,.;]*|développeur[^,.;]*|technicien[^,.;]*)/i);
+  if(m) return m[1].trim();
+  return 'Consultant';
 }
 
 // ===== RENDER DT =====
@@ -510,6 +582,22 @@ function makeExp(exp,idx,d){
     ${refs}
     ${pf(d)}`;
   return el;
+}
+
+function downloadDossierHtml(){
+  const content=document.getElementById('dtContent').innerHTML;
+  if(!content) return;
+  const css=document.querySelector('style')?.innerHTML||'';
+  const doc=`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Dossier Technique VACOA</title><style>${css}</style></head><body><div class="app"><div class="dt-wrapper">${content}</div></div></body></html>`;
+  const blob=new Blob([doc],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='dossier-technique-vacoa.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ===== RESET =====
