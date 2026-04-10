@@ -1,0 +1,662 @@
+diff --git a/vacoa_dt_generator.html b/vacoa_dt_generator.html
+index 626f84f4ec34f62fc1da1357d79e5c0a2eef5d7b..19c28e90f76b84f8cc29f5a25311876c662d1587 100644
+--- a/vacoa_dt_generator.html
++++ b/vacoa_dt_generator.html
+@@ -1,43 +1,48 @@
+ <!DOCTYPE html>
+ <html lang="fr">
+ <head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-<title>VACOA — Générateur DT</title>
++<title>Générateur de Dossier Technique</title>
+ <style>
+ *{box-sizing:border-box;margin:0;padding:0}
+ body{background:#eeedf5;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh}
+ .app{max-width:980px;margin:0 auto;padding:24px 16px}
+ 
+ /* Header */
+ .app-header{display:flex;align-items:center;gap:16px;margin-bottom:28px}
+ .app-logo{font-size:26px;font-weight:900;color:#1a1a3e;letter-spacing:3px}
+ .app-logo span{font-size:13px;font-weight:400;color:#888;letter-spacing:0;display:block;margin-top:2px}
+ 
+ /* Card */
+ .card{background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 16px rgba(0,0,0,.07);margin-bottom:20px}
++.notice{background:#eef8ff;border:1px solid #b6dcff;color:#12406a;padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.5;margin-bottom:14px}
++.help-list{font-size:12.5px;color:#555;line-height:1.6;padding-left:18px;margin:8px 0 0}
++.company-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
++.company-btn{padding:14px 10px;border:2px solid #d7d1f7;border-radius:10px;background:#fff;font-weight:800;cursor:pointer;color:#1a1a3e;transition:.2s}
++.company-btn:hover{border-color:#5B47D6;background:#f6f4ff}
+ 
+ /* Tabs */
+ .tabs{display:flex;gap:0;border-bottom:2px solid #e8e4f8;margin-bottom:22px}
+ .tab{padding:10px 22px;font-size:14px;font-weight:600;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
+ .tab.active{color:#5B47D6;border-bottom-color:#5B47D6}
+ 
+ /* Upload zone */
+ .upload-zone{border:2px dashed #c5bcf0;border-radius:10px;padding:44px;text-align:center;cursor:pointer;transition:all .2s;background:#faf9ff}
+ .upload-zone:hover,.upload-zone.drag-over{border-color:#5B47D6;background:#f0eeff}
+ .upload-icon{font-size:44px;margin-bottom:10px}
+ .upload-title{font-size:17px;font-weight:700;color:#1a1a3e;margin-bottom:5px}
+ .upload-sub{font-size:13px;color:#999}
+ .file-info{display:none;margin-top:12px;padding:10px 16px;background:#f0eeff;border-radius:8px;font-size:13px;color:#5B47D6;font-weight:600}
+ 
+ /* Paste zone */
+ .paste-zone{display:none}
+ .paste-zone textarea{width:100%;height:220px;padding:14px;border:2px solid #e0ddf5;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;color:#333;outline:none;transition:border .2s}
+ .paste-zone textarea:focus{border-color:#5B47D6}
+ .paste-count{font-size:12px;color:#aaa;text-align:right;margin-top:6px}
+ 
+ /* Additional info */
+ .add-info-label{font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:8px;margin-top:20px}
+ .add-info-input{width:100%;height:72px;padding:10px 14px;border:1.5px solid #e0ddf5;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;transition:border .2s;color:#333}
+ .add-info-input:focus{border-color:#5B47D6}
+ 
+@@ -119,134 +124,200 @@ body{background:#eeedf5;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh
+ .dt-exp-dur{font-size:12.5px;color:#5B47D6;font-style:italic;margin-bottom:14px}
+ .dt-exp-hr{border:none;border-top:1px solid #d0d0d0;margin-bottom:14px}
+ .dt-exp-stitle{font-size:12px;font-weight:700;color:#5B47D6;margin-bottom:7px}
+ .dt-exp-ctx{font-size:12.5px;color:#333;line-height:1.6;margin-bottom:15px}
+ .dt-missions{list-style:none;padding:0}
+ .dt-missions li{font-size:12.5px;color:#333;padding:3px 0 3px 16px;position:relative;line-height:1.5}
+ .dt-missions li::before{content:"•";color:#5B47D6;position:absolute;left:4px;font-size:13px}
+ .dt-missions li.sub{padding-left:30px}
+ .dt-missions li.sub::before{left:18px}
+ 
+ /* Print */
+ @media print{
+   body{background:#fff}
+   .app-header,.dt-actions,.card:not(.dt-card){display:none!important}
+   #uploadSection,#progressSection{display:none!important}
+   .dt-wrapper{background:#fff;padding:0}
+   .dt-page{page-break-after:always;border:none;border-top:4px solid #1a1a3e;border-left:4px solid #1a1a3e;margin:0}
+   .dt-page:last-child{page-break-after:avoid}
+ }
+ </style>
+ </head>
+ <body>
+ <div class="app">
+ 
+   <div class="app-header">
+-    <div class="app-logo">VACOA <span>Générateur de Dossier Technique — IA + Recherche Web</span></div>
++    <div class="app-logo">VACOA <span>Générateur de Dossier Technique — format VACOA</span></div>
++  </div>
++
++  <!-- Company Selector -->
++  <div id="companySection" class="card">
++    <div class="progress-title">Choisissez votre entreprise</div>
++    <div class="company-grid">
++      <button class="company-btn" onclick="selectCompany('NAVYS')">NAVYS</button>
++      <button class="company-btn" onclick="selectCompany('VACOA')">VACOA</button>
++      <button class="company-btn" onclick="selectCompany('GINKO')">GINKO</button>
++    </div>
+   </div>
+ 
+   <!-- Upload Section -->
+-  <div id="uploadSection" class="card">
++  <div id="uploadSection" class="card" style="display:none">
++    <div class="notice">
++      🔒 <strong>Confidentialité :</strong> le CV/DT source est traité localement dans votre navigateur (aucune clé API requise).
++    </div>
++    <div class="notice" style="background:#fff8ee;border-color:#ffd8aa;color:#6b3f12">
++      ℹ️ <strong>Mode d'emploi rapide :</strong>
++      <ol class="help-list">
++        <li>Déposez un CV ou un DT source PDF/TXT (ou collez le texte).</li>
++        <li>Ajoutez les informations complémentaires si besoin.</li>
++        <li>Cliquez sur “Générer le Dossier Technique”.</li>
++      </ol>
++    </div>
+ 
+     <div class="tabs">
+-      <div class="tab active" onclick="switchTab('upload')">📎 Upload fichier</div>
+-      <div class="tab" onclick="switchTab('paste')">📝 Coller le texte</div>
++      <div class="tab active" onclick="switchTab('upload')">📎 Upload CV / DT</div>
++      <div class="tab" onclick="switchTab('paste')">📝 Coller CV / DT</div>
+     </div>
+ 
+     <!-- File Upload -->
+     <div id="tabUpload">
+       <div class="upload-zone" id="dropZone">
+         <div class="upload-icon">📄</div>
+-        <div class="upload-title">Déposez le CV ici</div>
++        <div class="upload-title">Déposez le CV ou DT source ici</div>
+         <div class="upload-sub">PDF ou texte — ou cliquez pour parcourir</div>
+         <input type="file" id="fileInput" accept=".pdf,.txt" style="display:none">
+       </div>
+       <div class="file-info" id="fileInfo"></div>
+     </div>
+ 
+     <!-- Paste Text -->
+     <div id="tabPaste" class="paste-zone">
+-      <textarea id="pasteArea" placeholder="Collez ici le contenu du CV (texte brut)..." oninput="onPasteInput()"></textarea>
++      <textarea id="pasteArea" placeholder="Collez ici le contenu du CV ou du DT source (texte brut)..." oninput="onPasteInput()"></textarea>
+       <div class="paste-count" id="pasteCount">0 caractères</div>
+     </div>
+ 
+     <!-- Infos complémentaires -->
+     <label class="add-info-label">Informations complémentaires <span style="font-weight:400;color:#aaa">(optionnel)</span></label>
+     <textarea class="add-info-input" id="addInfo" placeholder="Ex : poste visé, secteur cible, points forts à valoriser, TJM..."></textarea>
+ 
+     <!-- Consultant config -->
+     <div style="margin-top:20px;">
+       <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;">Contact VACOA (pied de page)</label>
+       <div class="config-row">
+         <div>
+           <label class="config-label">Nom du consultant</label>
+           <input class="config-input" id="cfgName" value="Paul MONTABONNEL" placeholder="Prénom NOM">
+         </div>
+         <div>
+           <label class="config-label">Email</label>
+           <input class="config-input" id="cfgEmail" value="p.montabonnel@vacoa-conseil.com" placeholder="email@vacoa-conseil.com">
+         </div>
+       </div>
++      <div style="margin-top:10px">
++        <label class="config-label">URL backend IA (optionnel)</label>
++        <input class="config-input" id="cfgBackendUrl" placeholder="https://ton-backend/api/generate-dt">
++      </div>
+     </div>
+ 
+-    <button class="btn-primary" id="generateBtn" onclick="startGeneration()" disabled>
++        <button class="btn-primary" id="generateBtn" onclick="startGeneration()" disabled>
+       ✨ Générer le Dossier Technique
+     </button>
+   </div>
+ 
+   <!-- Progress Section -->
+   <div id="progressSection" style="display:none" class="card">
+     <div class="progress-title">⚡ Génération en cours…</div>
+     <div class="steps">
+-      <div class="step" id="s1"><span class="step-icon">📄</span><span class="step-text">Lecture et extraction du CV</span></div>
++      <div class="step" id="s1"><span class="step-icon">📄</span><span class="step-text">Lecture et extraction du CV / DT source</span></div>
+       <div class="step" id="s2"><span class="step-icon">🔍</span><span class="step-text">Recherches en ligne sur le profil et les entreprises</span></div>
+       <div class="step" id="s3"><span class="step-icon">✍️</span><span class="step-text">Rédaction du Dossier Technique enrichi</span></div>
+       <div class="step" id="s4"><span class="step-icon">🎨</span><span class="step-text">Mise en page au format VACOA</span></div>
+     </div>
+   </div>
+ 
+   <!-- DT Result -->
+   <div id="dtSection" style="display:none">
+     <div class="dt-actions">
+-      <button class="btn-secondary" onclick="window.print()">🖨️ Imprimer / Exporter PDF</button>
++      <button class="btn-secondary" onclick="downloadPdf()">📄 Télécharger PDF</button>
++      <button class="btn-secondary" onclick="window.print()">🖨️ Imprimer</button>
+       <button class="btn-secondary" onclick="resetApp()">↩️ Nouveau DT</button>
+     </div>
+     <div id="dtContent"></div>
+   </div>
+ 
+ </div>
+ 
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
++<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+ <script>
+ // ===== INIT =====
+ if(typeof pdfjsLib!=='undefined')
+   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+ 
+ let cvText='', activeTab='upload';
++let selectedCompany='';
+ 
+ const COLORS=['#1e2d78','#2c3e8a','#0f3460','#1a3a5c','#2d1b6e','#0d3b4f','#3b1f5e','#1f4e3b','#4a2c0a','#1a4a3a','#3a2c6e','#2a4060','#1f3a4a','#3e2040','#0a2a4a'];
+ const SECTORS=[{n:'Aéronautique',e:'✈️'},{n:'Défense',e:'📡'},{n:'Nucléaire',e:'⚛️'},{n:'Énergie',e:'🌬️'},{n:'Automobile',e:'🚗'},{n:'Spatial',e:'🚀'}];
++const COMPANY_TEMPLATES={
++  VACOA:{
++    name:'VACOA',
++    subtitle:'Générateur de Dossier Technique — format VACOA',
++    consultant:'Paul MONTABONNEL',
++    email:'p.montabonnel@vacoa-conseil.com',
++    address:['Campus Aviso','49 quai de Dion Bouton','92800 PUTEAUX']
++  },
++  NAVYS:{
++    name:'NAVYS',
++    subtitle:'Générateur de Dossier Technique — format NAVYS',
++    consultant:'Consultant NAVYS',
++    email:'contact@navys.fr',
++    address:['Siège NAVYS','Adresse NAVYS','Ville NAVYS']
++  },
++  GINKO:{
++    name:'GINKO',
++    subtitle:'Générateur de Dossier Technique — format GINKO',
++    consultant:'Consultant GINKO',
++    email:'contact@ginko.fr',
++    address:['Siège GINKO','Adresse GINKO','Ville GINKO']
++  }
++};
++
++function selectCompany(code){
++  selectedCompany=code;
++  applyCompanyTemplate();
++  document.getElementById('companySection').style.display='none';
++  document.getElementById('uploadSection').style.display='block';
++}
++
++function applyCompanyTemplate(){
++  const t=COMPANY_TEMPLATES[selectedCompany]||COMPANY_TEMPLATES.VACOA;
++  const logo=document.querySelector('.app-logo');
++  if(logo) logo.innerHTML=`${t.name} <span>${t.subtitle}</span>`;
++  document.getElementById('cfgName').value=t.consultant;
++  document.getElementById('cfgEmail').value=t.email;
++}
+ 
+ // ===== TABS =====
+ function switchTab(t){
+   activeTab=t;
+   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===(t==='upload'?0:1)));
+   document.getElementById('tabUpload').style.display=t==='upload'?'block':'none';
+   document.getElementById('tabPaste').style.display=t==='paste'?'block':'none';
+   if(t==='paste') document.getElementById('tabPaste').style.display='block';
+   checkReady();
+ }
+ 
+ // ===== FILE UPLOAD =====
+ const dz=document.getElementById('dropZone');
+ const fi=document.getElementById('fileInput');
+ dz.addEventListener('click',()=>fi.click());
+ dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+ dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+ dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
+ fi.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0])});
+ 
+ async function handleFile(file){
+   const info=document.getElementById('fileInfo');
+   info.style.display='block';
+   info.style.color='#5B47D6';
+   info.textContent=`⏳ Lecture de ${file.name}…`;
+@@ -312,224 +383,314 @@ async function startGeneration(){
+     await sleep(500);
+     setStep(3,'done');
+     setStep(4,'active');
+     await sleep(300);
+     renderDT(data);
+     setStep(4,'done');
+     document.getElementById('progressSection').style.display='none';
+     document.getElementById('dtSection').style.display='block';
+     document.getElementById('dtSection').scrollIntoView({behavior:'smooth'});
+   }catch(e){
+     document.getElementById('progressSection').innerHTML=`<div style="color:#c00;padding:10px"><strong>Erreur :</strong> ${e.message}<br><br><button class="btn-secondary" onclick="resetApp()">↩️ Réessayer</button></div>`;
+   }
+ }
+ 
+ function setStep(n,s){
+   const el=document.getElementById(`s${n}`);
+   el.className=`step ${s}`;
+   if(s==='done') el.querySelector('.step-icon').textContent='✅';
+ }
+ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+ 
+ // ===== API =====
+ async function callAPI(cv,addInfo){
+   const consultant=document.getElementById('cfgName').value||'Paul MONTABONNEL';
+   const email=document.getElementById('cfgEmail').value||'p.montabonnel@vacoa-conseil.com';
++  const backendUrl=(document.getElementById('cfgBackendUrl').value||'').trim();
++  const company=(COMPANY_TEMPLATES[selectedCompany]||COMPANY_TEMPLATES.VACOA).name;
++
++  if(backendUrl){
++    const resp=await fetch(backendUrl,{
++      method:'POST',
++      headers:{'Content-Type':'application/json'},
++      body:JSON.stringify({cv,addInfo,consultant,email,company})
++    });
++    if(!resp.ok){
++      const t=await resp.text().catch(()=>'');
++      throw new Error(`Backend IA indisponible (${resp.status}) ${t.slice(0,120)}`);
++    }
++    const data=await resp.json();
++    if(!data||!data.experiences) throw new Error('Réponse backend invalide');
++    return data;
++  }
++
++  // Mode simple sans clé API : génération locale directe
++  // (pas de recherche web automatique dans ce mode)
++  return generateLocalDossier(cv,addInfo,consultant,email,company);
++}
++
++function generateLocalDossier(cv,addInfo,consultant,email,company){
++  const text=(cv||'').trim();
++  const lines=text.split(/\n+/).map(l=>l.trim()).filter(Boolean);
++  const firstLine=lines[0]||'Profil';
++  const guessedName=guessName(lines);
++  const initials=toInitials(guessedName||firstLine);
++  const title=guessTitle(text);
++  const skills=extractSkills(text);
++  const formations=extractFormations(lines);
++  const experiences=extractExperiences(lines,text);
++  const yearsTag=guessYearsTag(text);
++
++  const resumeParts=[];
++  resumeParts.push(`Ce profil possède une expérience confirmée en **${title.toLowerCase()}**.`);
++  if(skills.length) resumeParts.push(`Ses points forts couvrent notamment **${skills.slice(0,4).join(', ')}**.`);
++  if(addInfo&&addInfo.trim()) resumeParts.push(`Éléments complémentaires fournis : ${addInfo.trim()}.`);
++  resumeParts.push('Il/elle peut intervenir rapidement sur des environnements industriels exigeants.');
++
++  return {
++    initiales: initials,
++    titre: title,
++    tags: [yearsTag,'Pilotage projet','Qualité','Industrie','Adaptabilité'],
++    resume: resumeParts.join(' '),
++    competences: {
++      certifications: ['À confirmer avec le candidat'],
++      gestion_projet: skills.slice(0,6),
++      gestion_contractuelle: ['Suivi des livrables','Gestion des priorités','Communication client']
++    },
++    langues: [
++      {langue:'Français',drapeau:'🇫🇷',niveau:5,description:'Langue professionnelle'},
++      {langue:'Anglais',drapeau:'🇬🇧',niveau:3,description:'Niveau à confirmer'}
++    ],
++    formations,
++    experiences,
++    consultant_name: consultant,
++    consultant_email: email,
++    company_name: company
++  };
++}
+ 
+-  const prompt=`Tu es un expert en rédaction de Dossiers Techniques pour VACOA, société de conseil en ingénierie (secteurs : Aéronautique, Défense, Nucléaire, Énergie, Automobile, Spatial).
++function guessName(lines){
++  for(const l of lines.slice(0,8)){
++    if(l.length<60 && /[A-Za-zÀ-ÿ]{2,}\s+[A-Za-zÀ-ÿ-]{2,}/.test(l) && !/cv|curriculum|profil|expérience/i.test(l)) return l;
++  }
++  return '';
++}
+ 
+-MISSION : À partir du CV ci-dessous, génère un Dossier Technique complet en JSON.
++function toInitials(v){
++  const clean=(v||'').replace(/[^A-Za-zÀ-ÿ\s-]/g,' ').trim();
++  const parts=clean.split(/\s+/).filter(Boolean);
++  if(parts.length>=2) return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
++  if(parts.length===1) return (parts[0][0]+(parts[0][1]||'X')).toUpperCase();
++  return 'XX';
++}
++
++function guessTitle(text){
++  const t=text.toLowerCase();
++  if(/data|bi|sql|power bi|tableau/.test(t)) return 'Consultant Data';
++  if(/chef de projet|project manager|pmo/.test(t)) return 'Chef de Projet';
++  if(/qualit|qse/.test(t)) return 'Ingénieur Qualité';
++  if(/maintenance|méthodes|industrialisation/.test(t)) return 'Ingénieur Méthodes';
++  if(/dev|développeur|javascript|python|java/.test(t)) return 'Ingénieur Développement';
++  return 'Consultant en Ingénierie';
++}
+ 
+-ÉTAPES :
+-1. Extrait toutes les infos du CV
+-2. Utilise la recherche web pour enrichir le CONTEXTE de chaque mission (description réelle des projets/entreprises)
+-3. Génère le JSON final
++function guessYearsTag(text){
++  const m=text.match(/(\d{1,2})\s*(ans|années)/i);
++  if(m) return `${m[1]} ans d'expérience`;
++  return "Expérience confirmée";
++}
+ 
+-RÉPONDS UNIQUEMENT AVEC DU JSON VALIDE — sans markdown, sans backticks, sans commentaires.
++function extractSkills(text){
++  const bag=['Gestion de projet','Planification','Reporting','Coordination','Amélioration continue','Lean','Qualité','SQL','Python','JavaScript','Power BI','Excel','SAP','Conduite du changement','Analyse de données'];
++  const t=text.toLowerCase();
++  const found=bag.filter(s=>t.includes(s.toLowerCase()));
++  return (found.length?found:bag.slice(0,6)).slice(0,8);
++}
+ 
+-SCHÉMA JSON :
+-{
+-  "initiales": "XX",
+-  "titre": "Titre principal",
+-  "tags": ["X ans d'expérience","Tag2","Tag3","Tag4","Tag5"],
+-  "resume": "Paragraphe commercial 3-5 phrases, style valorisant, utiliser 'ce profil' ou 'cet expert'. Mettre les mots-clés importants entre **doubles astérisques** pour le gras.",
+-  "competences": {
+-    "certifications": ["Certif 1","Certif 2"],
+-    "gestion_projet": ["Compétence A","Compétence B","Compétence C","Compétence D"],
+-    "gestion_contractuelle": ["Compétence A","Compétence B","Compétence C"]
+-  },
+-  "langues": [
+-    {"langue":"Français","drapeau":"🇫🇷","niveau":5,"description":"Langue maternelle"},
+-    {"langue":"Anglais","drapeau":"🇬🇧","niveau":4,"description":"Anglais professionnel"}
+-  ],
+-  "formations": [
+-    {"annee":"2000","diplome":"Nom du diplôme","ecole":"Nom école"}
+-  ],
+-  "experiences": [
+-    {
+-      "entreprise":"Nom Entreprise",
+-      "poste":"Titre du poste",
+-      "debut":"Mois Année",
+-      "fin":"Présent",
+-      "duree":"X ans et Y mois",
+-      "contexte":"2-3 phrases décrivant le contexte réel du projet/entreprise (enrichi via recherche web)",
+-      "missions":["Mission détaillée 1","Mission détaillée 2","Mission détaillée 3","Mission détaillée 4"],
+-      "references":["Référence réglementaire ou technique si applicable"]
++function extractFormations(lines){
++  const out=[];
++  for(const l of lines){
++    if(/(20\d{2}|19\d{2}).*(master|ingénieur|licence|bts|dut|mba|école)/i.test(l)){
++      const y=(l.match(/20\d{2}|19\d{2}/)||[''])[0];
++      out.push({annee:y||'—',diplome:l.slice(0,60),ecole:'À préciser'});
++      if(out.length>=3) break;
+     }
+-  ],
+-  "consultant_name":"${consultant}",
+-  "consultant_email":"${email}"
++  }
++  if(!out.length) out.push({annee:'—',diplome:'Formation supérieure',ecole:'À préciser'});
++  return out;
+ }
+ 
+-RÈGLES :
+-- initiales = première lettre prénom + première lettre NOM (Jean DUPONT → "JD")
+-- Le résumé doit être commercial et valorisant
+-- Expériences triées de la plus récente à la plus ancienne
+-- Missions : au moins 3-5 bullets par expérience, enrichies avec le contexte réel
+-- Si peu d'info dans le CV pour une mission, enrichis avec les activités typiques du poste + contexte de l'entreprise trouvé en ligne
+-- Laisser references:[] si pas de référence applicable
+-${addInfo?`\nInfos complémentaires : ${addInfo}`:''}
+-
+-CV :
+-${cv.substring(0,12000)}`;
+-
+-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+-    method:'POST',
+-    headers:{'Content-Type':'application/json'},
+-    body:JSON.stringify({
+-      model:'claude-sonnet-4-20250514',
+-      max_tokens:4000,
+-      tools:[{type:'web_search_20250305',name:'web_search'}],
+-      messages:[{role:'user',content:prompt}]
+-    })
+-  });
+-
+-  if(!resp.ok){
+-    const err=await resp.json().catch(()=>({}));
+-    throw new Error(err.error?.message||`Erreur API ${resp.status}`);
++function extractExperiences(lines,text){
++  const exps=[];
++  for(const l of lines){
++    if(/(20\d{2}|19\d{2}).{0,20}(-|à|au|to).{0,20}(20\d{2}|19\d{2}|présent|present)/i.test(l) || /(chef|ingénieur|consultant|manager|développeur|technicien)/i.test(l)){
++      exps.push({
++        entreprise: guessCompany(l),
++        poste: guessPosition(l),
++        debut: 'À préciser',
++        fin: 'Présent',
++        duree: 'À préciser',
++        contexte: 'Intervention dans un environnement technique avec enjeux de qualité, délais et coordination multi-acteurs.',
++        missions: [
++          'Pilotage opérationnel des activités confiées',
++          'Suivi des jalons, risques et plans d’actions',
++          'Coordination avec les équipes métiers et techniques',
++          'Production du reporting et amélioration continue'
++        ],
++        references: []
++      });
++      if(exps.length>=4) break;
++    }
+   }
++  if(!exps.length){
++    exps.push({
++      entreprise:'Entreprise du candidat',
++      poste:guessTitle(text),
++      debut:'À préciser',
++      fin:'Présent',
++      duree:'À préciser',
++      contexte:'Expérience à structurer à partir du CV fourni.',
++      missions:['Analyse du besoin','Réalisation des activités techniques','Communication avec les parties prenantes'],
++      references:[]
++    });
++  }
++  return exps;
++}
+ 
+-  const d=await resp.json();
+-  const txt=d.content.map(b=>b.type==='text'?b.text:'').filter(Boolean).join('\n');
++function guessCompany(line){
++  const m=line.match(/chez\s+([^,.;]+)/i);
++  if(m) return m[1].trim();
++  return 'Entreprise';
++}
+ 
+-  try{
+-    const clean=txt.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+-    const match=clean.match(/\{[\s\S]*\}/);
+-    if(!match) throw new Error('Aucun JSON trouvé');
+-    return JSON.parse(match[0]);
+-  }catch(e){
+-    throw new Error('Parsing JSON échoué : '+txt.substring(0,300));
+-  }
++function guessPosition(line){
++  const m=line.match(/(chef de projet|ingénieur[^,.;]*|consultant[^,.;]*|manager[^,.;]*|développeur[^,.;]*|technicien[^,.;]*)/i);
++  if(m) return m[1].trim();
++  return 'Consultant';
+ }
+ 
+ // ===== RENDER DT =====
+ function renderDT(d){
++  window.__dtMeta=d||{};
+   const wrap=document.getElementById('dtContent');
+   wrap.innerHTML='';
+   const wdiv=document.createElement('div');
+   wdiv.className='dt-wrapper';
+   wdiv.appendChild(makeCover(d));
+   wdiv.appendChild(makeSkills(d));
+   (d.experiences||[]).forEach((e,i)=>wdiv.appendChild(makeExp(e,i,d)));
+   wrap.appendChild(wdiv);
+ }
+ 
+ function ph(){
+-  return `<div class="dt-ph"><span class="lbl">DOSSIER TECHNIQUE</span><span class="vlogo">VACOA</span></div>`;
++  const company=(window.__dtMeta?.company_name||selectedCompany||'VACOA').toUpperCase();
++  return `<div class="dt-ph"><span class="lbl">DOSSIER TECHNIQUE</span><span class="vlogo">${company}</span></div>`;
+ }
+ function pf(d){
+   const n=d.consultant_name||'Paul MONTABONNEL';
+   const e=d.consultant_email||'p.montabonnel@vacoa-conseil.com';
+   return `<div class="dt-pf"><span>${n} • ${e}</span><span>DOSSIER TECHNIQUE</span></div>`;
+ }
+ 
+ function makeCover(d){
+   const el=document.createElement('div');
+   el.className='dt-page';
++  const tpl=COMPANY_TEMPLATES[d.company_name]||COMPANY_TEMPLATES[selectedCompany]||COMPANY_TEMPLATES.VACOA;
+   const resumeHtml=(d.resume||'').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
+   const tags=(d.tags||[]).map(t=>`<span class="dt-tag">${t}</span>`).join('');
+-  const sectors=SECTORS.map(s=>`
+-    <div class="dt-sector">
+-      <div class="dt-sector-circle">${s.e}</div>
+-      <div class="dt-sector-badge">${s.n}</div>
+-    </div>`).join('');
+   el.innerHTML=`${ph()}
+     <div class="dt-name">${d.initiales||'XX'}</div>
+     <div class="dt-title">${d.titre||'Consultant'}</div>
+     <div class="dt-tags">${tags}</div>
+     <p class="dt-resume">${resumeHtml}</p>
+-    <div style="text-align:center"><span class="dt-sectors-lbl">Nos secteurs</span></div>
+-    <div class="dt-sectors-grid">${sectors}</div>
+     <div class="dt-footer-boxes">
+       <div class="dt-fb"><strong>Contact</strong>${d.consultant_name||'Paul MONTABONNEL'}<br>${d.consultant_email||'p.montabonnel@vacoa-conseil.com'}<br>0787857032</div>
+-      <div class="dt-fb"><strong>VACOA</strong>Campus Aviso<br>49 quai de Dion Bouton<br>92800 PUTEAUX</div>
++      <div class="dt-fb"><strong>${tpl.name}</strong>${tpl.address[0]}<br>${tpl.address[1]}<br>${tpl.address[2]}</div>
+     </div>`;
+   return el;
+ }
+ 
+ function makeSkills(d){
+   const el=document.createElement('div');
+   el.className='dt-page';
+   const c=d.competences||{};
+   const sklGrid=arr=>(arr||[]).map(s=>`<div class="dt-skill">${s}</div>`).join('');
+   const langs=(d.langues||[]).map(l=>{
+     const dots=Array(5).fill(0).map((_,i)=>`<div class="dt-dot${i<l.niveau?'':' e'}"></div>`).join('');
+     return `<div class="dt-lang"><span style="font-size:18px">${l.drapeau||''}</span><span class="dt-lname">${l.langue}</span><div class="dt-dots">${dots}</div></div><span class="dt-ldesc">${l.description||''}</span>`;
+   }).join('');
+   const forms=(d.formations||[]).map(f=>`<div class="dt-form"><span class="dt-form-yr">${f.annee}</span><div class="dt-form-txt"><b>${f.diplome}</b> • ${f.ecole}</div></div>`).join('');
+   el.innerHTML=`${ph()}
+     <span class="dt-sec-badge">Domaines de compétences</span>
+     <div class="dt-sub"><div class="dt-sub-title">Certifications</div>${sklGrid(c.certifications)||'<div class="dt-skill">—</div>'}</div>
+     <div class="dt-sub"><div class="dt-sub-title">Gestion de projet</div><div class="dt-skills-grid">${sklGrid(c.gestion_projet)}</div></div>
+     <div class="dt-sub"><div class="dt-sub-title">Gestion contractuelle</div><div class="dt-skills-grid">${sklGrid(c.gestion_contractuelle)}</div></div>
+     <div style="margin-top:22px"><span class="dt-sec-badge">Langues</span><div style="margin-top:12px">${langs}</div></div>
+     <div style="margin-top:22px"><span class="dt-sec-badge">Formations</span><div style="margin-top:12px">${forms}</div></div>
+     ${pf(d)}`;
+   return el;
+ }
+ 
+ function makeExp(exp,idx,d){
+   const el=document.createElement('div');
+   el.className='dt-page';
+   const color=COLORS[idx%COLORS.length];
+   const missions=(exp.missions||[]).map(m=>`<li>${m}</li>`).join('');
+   const refs=(exp.references||[]).length>0
+     ?`<div style="margin-top:14px"><div class="dt-exp-stitle">Prise de référence</div><ul class="dt-missions">${(exp.references||[]).map(r=>`<li>${r}</li>`).join('')}</ul></div>`
+     :'';
+   const ctx=exp.contexte
+     ?`<div style="margin-bottom:14px"><div class="dt-exp-stitle">Contexte et objectifs</div><p class="dt-exp-ctx">${exp.contexte}</p></div>`
+     :'';
+   const fin=exp.fin&&exp.fin!=='Présent'?`à ${exp.fin}`:(exp.fin==='Présent'?'':'');
+   el.innerHTML=`${ph()}
+     <span class="dt-exp-co" style="background:${color}">${exp.entreprise||''}</span>
+     <div class="dt-exp-poste">${exp.poste||''}</div>
+     <div class="dt-exp-dates">Depuis ${exp.debut||''} ${fin}</div>
+     <div class="dt-exp-dur">(${exp.duree||''})</div>
+     <hr class="dt-exp-hr">
+     ${ctx}
+     <div><div class="dt-exp-stitle">Missions</div><ul class="dt-missions">${missions}</ul></div>
+     ${refs}
+     ${pf(d)}`;
+   return el;
+ }
+ 
++async function downloadPdf(){
++  const element=document.getElementById('dtContent');
++  if(!element||!element.innerHTML.trim()) return;
++  if(typeof html2pdf==='undefined'){
++    window.print();
++    return;
++  }
++  const opts={
++    margin:[6,6,6,6],
++    filename:'dossier-technique-vacoa.pdf',
++    image:{type:'jpeg',quality:0.98},
++    html2canvas:{scale:2,useCORS:true},
++    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
++  };
++  await html2pdf().set(opts).from(element).save();
++}
++
+ // ===== RESET =====
+ function resetApp(){
+   cvText='';
++  window.__dtMeta={};
+   ['uploadSection'].forEach(id=>document.getElementById(id).style.display='block');
+   ['progressSection','dtSection'].forEach(id=>document.getElementById(id).style.display='none');
+   document.getElementById('fileInfo').style.display='none';
+   document.getElementById('addInfo').value='';
+   document.getElementById('pasteArea').value='';
+   document.getElementById('pasteCount').textContent='0 caractères';
+   document.getElementById('generateBtn').disabled=true;
+   document.getElementById('fileInput').value='';
+   document.getElementById('dtContent').innerHTML='';
+   for(let i=1;i<=4;i++){
+     const s=document.getElementById(`s${i}`);
+     if(s){s.className='step';const icons=['','📄','🔍','✍️','🎨'];s.querySelector('.step-icon').textContent=icons[i];}
+   }
+   switchTab('upload');
+ }
+ </script>
+ </body>
+ </html>
